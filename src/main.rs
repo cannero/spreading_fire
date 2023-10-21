@@ -1,7 +1,9 @@
 use std::net::SocketAddr;
 
-use axum::{Router, response::Html, routing::get};
+use axum::{Router, response::IntoResponse, routing::get, http::StatusCode, Json};
+use serde::Serialize;
 use tokio::{signal, sync::broadcast};
+use tower_http::{trace::TraceLayer, services::{ServeDir, ServeFile}};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 
@@ -10,7 +12,7 @@ async fn main() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "spreading_fire=trace".into()),
+                .unwrap_or_else(|_| "spreading_fire=trace,tower_http=debug".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -19,7 +21,9 @@ async fn main() {
     let tx_shutdown = tx.clone();
 
     let app = Router::new()
-        .route("/", get(index));
+        .nest_service("/", ServeDir::new("public").not_found_service(ServeFile::new("public/index.html")))
+        .route("/frames", get(frames))
+        .layer(TraceLayer::new_for_http());
 
     let address = SocketAddr::from(([0,0,0,0],3000));
     tracing::debug!("listing on {}", address);
@@ -59,7 +63,21 @@ async fn shutdown_signal(tx: broadcast::Sender<String>) {
     let _ = tx.send(msg);
 }
 
-async fn index() -> Html<&'static str> {
-    Html(std::include_str!("../public/index.html"))
+#[derive(Debug, Serialize, Clone)]
+struct Frame {
+    id: u32,
+    text: String,
 }
+
+async fn frames() ->  impl IntoResponse {
+
+    let frame = Frame{
+        id: 12,
+        text: "hello".to_string(),
+    };
+
+    (StatusCode::OK , Json(frame))
+}
+
+
 
