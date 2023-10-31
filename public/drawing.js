@@ -1,4 +1,6 @@
 (() => {
+    const wall = document.getElementById("wall_jpg");
+    const fire = document.getElementById("fire_jpg");
     const canvas = document.getElementById("main_canvas");
     const ctx = canvas.getContext("2d");
 
@@ -23,5 +25,10 @@
             ctx.clearRect(x, y, widthCol - 2 * widthBorder, heightRow - 2 * heightBorder);
         }
     }
+
+    ctx.drawImage(fire, 0, 0, widthCol - widthBorder, heightRow - heightBorder);
+    ctx.drawImage(wall, widthCol, heightRow, widthCol, heightRow);
+
     ctx.restore();
+
 })()
