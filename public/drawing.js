@@ -1,4 +1,4 @@
-(() => {
+function drawGrid(){
     const wall = document.getElementById("wall_jpg");
     const fire = document.getElementById("fire_jpg");
     const canvas = document.getElementById("main_canvas");
@@ -30,5 +30,6 @@
     ctx.drawImage(wall, widthCol, heightRow, widthCol, heightRow);
 
     ctx.restore();
+}
 
-})()
+export {drawGrid};
