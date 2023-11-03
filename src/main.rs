@@ -3,7 +3,7 @@ use std::{net::SocketAddr, sync::Arc};
 use axum::{Router, response::IntoResponse, routing::get, http::StatusCode, Json, extract::{State, ws::{Message, WebSocket, WebSocketUpgrade}}};
 use futures::{sink::SinkExt, stream::StreamExt};
 use serde::Serialize;
-use tokio::{signal, sync::broadcast};
+use tokio::{signal, sync::broadcast, time::{sleep, Duration}};
 use tower_http::{trace::TraceLayer, services::{ServeDir, ServeFile}};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -23,8 +23,16 @@ async fn main() {
         .init();
 
     let (tx, _rx) = broadcast::channel(100);
+    let tx2 = tx.clone();
     let tx_shutdown = tx.clone();
     let app_state = Arc::new(AppState{tx});
+
+    tokio::spawn(async move {
+        loop {
+            let _ = tx2.send("calculation done".to_string());
+            sleep(Duration::from_secs(3)).await;
+        }
+    });
 
     let app = Router::new()
         .nest_service("/", ServeDir::new("public").not_found_service(ServeFile::new("public/index.html")))
@@ -66,7 +74,7 @@ async fn websocket(stream: WebSocket, state: Arc<AppState>) {
 
     let mut recv_task_client = tokio::spawn(async move {
         while let Some(Ok(Message::Text(message))) = receiver.next().await {
-            let _ = tx.send(format!("{message}"));
+            let _ = tx.send(message.to_string());
         }
     });
 
