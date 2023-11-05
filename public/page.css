@@ -1,3 +1,30 @@
+body {
+    display: block;
+}
+/* style="display:block; width:600px; height:400px; box-sizing: border-box" */
+
+.grid {
+    display: grid;
+    grid-template-columns: [col1] 1fr [col2] 1fr;
+    grid-template-rows: [row1] 10% [row2] 60% [row3] auto;
+    column-gap: 10px;
+    row-gap: 15px;
+}
+
+#startcalculation {
+    grid-row: row1;
+}
+
+#main_canvas {
+    grid-row: row2;
+    grid-column: col1 / span 2;
+}
+
+#infoarea {
+    grid-row: row3;
+    grid-column: col1 / span 2;
+}
+
 .hidden {
     display: none;
 }

@@ -1,5 +1,8 @@
+// Create a connection to a websocket and
+// try to reconnect when the websocket is closed.
+let socket;
 function connect_ws(loc, messageCallback){
-    let socket, reconnectionTimerId;
+    let reconnectionTimerId;
 
     const requestUrl = `${loc.origin.replace("http", "ws")}/_websocket`
 
@@ -36,4 +39,13 @@ function connect_ws(loc, messageCallback){
     connect();
 }
 
-export {connect_ws};
+function send_message(message){
+    if (!socket){
+        console.error("[ws_connection] socket does not exist");
+        return;
+    }
+
+    socket.send(message);
+}
+
+export {connect_ws, send_message};
