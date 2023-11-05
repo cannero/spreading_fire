@@ -11,7 +11,7 @@ pub async fn websocket_handler(ws: WebSocketUpgrade, ConnectInfo(addr): ConnectI
 }
 
 async fn long_running_calc(tx: mpsc::Sender<String>,){
-    sleep(Duration::from_secs(3)).await;
+    sleep(Duration::from_secs(5)).await;
     let now = Instant::now();
     let _ = tx.send(format!("calculation done at {now:?}")).await;
     tracing::debug!("long_running_calc end");
@@ -40,10 +40,12 @@ async fn websocket(stream: WebSocket, who: SocketAddr, state: Arc<AppState>) {
         let mut stream_recv_task = tokio::spawn(async move {
             while let Some(Ok(Message::Text(message))) = receiver.next().await {
                 if message.starts_with("[Run calculation]"){
+                    state.abort_if_exists(&who).await;
                     let calculation_tx = websocket_tx.clone();
-                    tokio::spawn(async {
+                    let calc_task = tokio::spawn(async {
                         long_running_calc(calculation_tx).await;
                     });
+                    state.add(who, calc_task).await;
                     tracing::info!("calc started");
                 } else {
                     let _ = stream_tx.send(message.to_string());
